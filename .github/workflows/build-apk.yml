@@ -50,7 +50,7 @@ jobs:
       - name: 📲 Initialize Tauri Android (CI Mode)
         run: |
           if [ ! -d "src-tauri/gen/android" ]; then
-            npx @tauri-apps/cli android init --ci --ignore-version-mismatches
+            npx @tauri-apps/cli android init --ci
           fi
         env:
           NDK_HOME: /usr/local/lib/android/sdk/ndk/26.1.10909125
