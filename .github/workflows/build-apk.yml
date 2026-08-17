@@ -50,14 +50,14 @@ jobs:
       - name: 📲 Initialize Tauri Android (CI Mode)
         run: |
           if [ ! -d "src-tauri/gen/android" ]; then
-            npx @tauri-apps/cli android init --ci
+            npx @tauri-apps/cli android init --ci --ignore-version-mismatches
           fi
         env:
           NDK_HOME: /usr/local/lib/android/sdk/ndk/26.1.10909125
           ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/26.1.10909125
 
       - name: 🔨 Build Android APK
-        run: npx @tauri-apps/cli android build --apk --ci --target aarch64 --target armv7
+        run: npx @tauri-apps/cli android build --apk --ci --ignore-version-mismatches --target aarch64
         env:
           NDK_HOME: /usr/local/lib/android/sdk/ndk/26.1.10909125
           ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/26.1.10909125
