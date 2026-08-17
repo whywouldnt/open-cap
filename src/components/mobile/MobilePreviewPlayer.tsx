@@ -92,6 +92,7 @@ export const MobilePreviewPlayer: React.FC = () => {
 
       // Smooth Hardware GPU Render on every vsync frame
       if (gpuEngineRef.current && canvasRef.current) {
+        gpuEngineRef.current.syncVideoPlayback(project, calculatedTime, true);
         const renderResult = gpuEngineRef.current.renderScene(project, calculatedTime);
 
         // Throttle UI metrics state update (every 500ms) to prevent React render stutter
@@ -111,12 +112,18 @@ export const MobilePreviewPlayer: React.FC = () => {
     };
 
     animId = requestAnimationFrame(playLoop);
-    return () => cancelAnimationFrame(animId);
+    return () => {
+      cancelAnimationFrame(animId);
+      if (gpuEngineRef.current) {
+        gpuEngineRef.current.pauseAll();
+      }
+    };
   }, [isPlaying, project.duration]);
 
   // 3. Static Render when Paused and currentTime changes (scrubbing/stepping)
   useEffect(() => {
     if (!isPlaying && gpuEngineRef.current && canvasRef.current) {
+      gpuEngineRef.current.syncVideoPlayback(project, currentTime, false);
       gpuEngineRef.current.renderScene(project, currentTime);
     }
   }, [currentTime, isPlaying, project]);

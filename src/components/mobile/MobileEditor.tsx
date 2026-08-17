@@ -75,7 +75,7 @@ export const MobileEditor: React.FC = () => {
   }, []);
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#000000] text-white overflow-hidden select-none relative">
+    <div className="w-full h-[100dvh] flex flex-col bg-[#000000] text-white overflow-hidden select-none relative pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       {/* 1. Mobile Top Bar */}
       <MobileTopBar
         onOpenSettings={() => setIsSettingsOpen(true)}
