@@ -27,6 +27,8 @@ jobs:
 
       - name: 📱 Setup Android SDK & NDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'ndk;26.1.10909125'
 
       - name: 🦀 Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -50,18 +52,21 @@ jobs:
           if [ ! -d "src-tauri/gen/android" ]; then
             npx @tauri-apps/cli android init --ci
           fi
+        env:
+          NDK_HOME: /usr/local/lib/android/sdk/ndk/26.1.10909125
+          ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/26.1.10909125
 
       - name: 🔨 Build Android APK
-        run: npx @tauri-apps/cli android build --apk --ci --target aarch64,armv7,x86_64
+        run: npx @tauri-apps/cli android build --apk --ci --target aarch64 --target armv7
         env:
-          NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+          NDK_HOME: /usr/local/lib/android/sdk/ndk/26.1.10909125
+          ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/26.1.10909125
 
       - name: 🔍 Collect APK Outputs
         run: |
           mkdir -p build_output
           find src-tauri/gen/android -type f -name "*.apk" -exec cp {} build_output/ \;
           ls -la build_output/
-          # Ensure a unified named APK exists
           FIRST_APK=$(ls build_output/*.apk | head -n 1)
           if [ -n "$FIRST_APK" ]; then
             cp "$FIRST_APK" build_output/OPEN-CAP-Mobile.apk
