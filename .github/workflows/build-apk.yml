@@ -28,7 +28,7 @@ jobs:
       - name: 📱 Setup Android SDK & NDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'ndk;26.1.10909125'
+          packages: 'ndk;26.1.10909125 build-tools;34.0.0'
 
       - name: 🦀 Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -65,12 +65,18 @@ jobs:
       - name: 🔑 Generate Keystore & Sign APK (Android V2/V3 Signature)
         run: |
           mkdir -p build_output
+          
+          # Find Android Build Tools path dynamically (where zipalign & apksigner live)
+          BUILD_TOOLS_DIR=$(find /usr/local/lib/android/sdk/build-tools -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+          echo "Using Android Build Tools: $BUILD_TOOLS_DIR"
+          export PATH="$BUILD_TOOLS_DIR:$PATH"
+          
           # Generate standard release keystore
           keytool -genkey -v -keystore release.keystore -alias opencap -keyalg RSA -keysize 2048 -validity 10000 -storepass opencap123 -keypass opencap123 -dname "CN=OPEN-CAP, OU=Mobile, O=OpenSource, L=Istanbul, C=TR"
           
-          # Find all produced APKs
+          # Find produced APK
           UNSIGNED_APK=$(find src-tauri/gen/android -type f -name "*.apk" | head -n 1)
-          echo "Found APK: $UNSIGNED_APK"
+          echo "Found APK to sign: $UNSIGNED_APK"
           
           # Align & Sign with Android apksigner tool
           ALIGN_APK="build_output/aligned.apk"
@@ -80,7 +86,7 @@ jobs:
           
           # Verify signature
           apksigner verify --verbose build_output/OPEN-CAP-Mobile.apk
-          ls -la build_output/
+          ls -lh build_output/
 
       - name: 📤 Upload APK Artifact
         uses: actions/upload-artifact@v4
