@@ -62,29 +62,39 @@ jobs:
           NDK_HOME: /usr/local/lib/android/sdk/ndk/26.1.10909125
           ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/26.1.10909125
 
-      - name: 🔍 Collect APK Outputs
+      - name: 🔑 Generate Keystore & Sign APK (Android V2/V3 Signature)
         run: |
           mkdir -p build_output
-          find src-tauri/gen/android -type f -name "*.apk" -exec cp {} build_output/ \;
+          # Generate standard release keystore
+          keytool -genkey -v -keystore release.keystore -alias opencap -keyalg RSA -keysize 2048 -validity 10000 -storepass opencap123 -keypass opencap123 -dname "CN=OPEN-CAP, OU=Mobile, O=OpenSource, L=Istanbul, C=TR"
+          
+          # Find all produced APKs
+          UNSIGNED_APK=$(find src-tauri/gen/android -type f -name "*.apk" | head -n 1)
+          echo "Found APK: $UNSIGNED_APK"
+          
+          # Align & Sign with Android apksigner tool
+          ALIGN_APK="build_output/aligned.apk"
+          zipalign -v -p 4 "$UNSIGNED_APK" "$ALIGN_APK" || cp "$UNSIGNED_APK" "$ALIGN_APK"
+          
+          apksigner sign --ks release.keystore --ks-pass pass:opencap123 --key-pass pass:opencap123 --out build_output/OPEN-CAP-Mobile.apk "$ALIGN_APK"
+          
+          # Verify signature
+          apksigner verify --verbose build_output/OPEN-CAP-Mobile.apk
           ls -la build_output/
-          FIRST_APK=$(ls build_output/*.apk | head -n 1)
-          if [ -n "$FIRST_APK" ]; then
-            cp "$FIRST_APK" build_output/OPEN-CAP-Mobile.apk
-          fi
 
       - name: 📤 Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: OPEN-CAP-Android-APK
-          path: build_output/*.apk
+          path: build_output/OPEN-CAP-Mobile.apk
           retention-days: 30
 
-      - name: 🚀 Publish GitHub Release with APK
+      - name: 🚀 Publish GitHub Release with Signed APK
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            build_output/*.apk
+            build_output/OPEN-CAP-Mobile.apk
           generate_release_notes: true
           draft: false
           prerelease: false
