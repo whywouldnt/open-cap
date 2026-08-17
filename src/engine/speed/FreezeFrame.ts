@@ -3,12 +3,21 @@
  * Slices a video clip at the playhead and inserts a frozen frame clip with ripple shift
  */
 
-import { Track, Clip } from '@/types/project';
+import { Track, Clip, Project } from '@/types/project';
 
 export interface FreezeFrameResult {
   trackId: string;
   originalClips: Clip[];
   updatedClips: Clip[];
+  frozenClipId: string;
+}
+
+export interface ProjectFreezeFrameResult {
+  tracks: Array<{
+    trackId: string;
+    originalClips: Clip[];
+    updatedClips: Clip[];
+  }>;
   frozenClipId: string;
 }
 
@@ -90,6 +99,55 @@ export class FreezeFrameEngine {
       originalClips,
       updatedClips,
       frozenClipId: frozenClip.id,
+    };
+  }
+
+  /**
+   * Creates a freeze-frame and shifts trailing clips across ALL unlocked project tracks
+   */
+  public static createMultiTrackFreezeFrame(
+    project: Project,
+    sourceTrack: Track,
+    clip: Clip,
+    splitTimestamp: number,
+    freezeDuration: number = 2.0,
+    rippleAllTracks: boolean = true
+  ): ProjectFreezeFrameResult | null {
+    const singleResult = this.createFreezeFrame(sourceTrack, clip, splitTimestamp, freezeDuration);
+    if (!singleResult) return null;
+
+    const trackResults: ProjectFreezeFrameResult['tracks'] = [];
+
+    for (const trk of project.tracks) {
+      if (trk.isLocked) continue;
+
+      if (trk.id === sourceTrack.id) {
+        trackResults.push({
+          trackId: trk.id,
+          originalClips: singleResult.originalClips,
+          updatedClips: singleResult.updatedClips,
+        });
+      } else if (rippleAllTracks) {
+        const origClips = JSON.parse(JSON.stringify(trk.clips)) as Clip[];
+        const updatedClips = origClips.map((c) => {
+          const copy = { ...c };
+          if (copy.startTime >= splitTimestamp) {
+            copy.startTime += freezeDuration;
+          }
+          return copy;
+        });
+        updatedClips.sort((a, b) => a.startTime - b.startTime);
+        trackResults.push({
+          trackId: trk.id,
+          originalClips: origClips,
+          updatedClips,
+        });
+      }
+    }
+
+    return {
+      tracks: trackResults,
+      frozenClipId: singleResult.frozenClipId,
     };
   }
 }

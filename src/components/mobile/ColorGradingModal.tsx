@@ -113,7 +113,8 @@ export const ColorGradingModal: React.FC<ColorGradingModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-full text-zinc-400 hover:text-white"
+            className="p-2.5 rounded-full text-zinc-400 hover:text-white"
+            aria-label="Kapat"
           >
             <X className="w-5 h-5" />
           </button>

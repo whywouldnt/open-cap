@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "OPEN-CAP Mobile",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "identifier": "com.opencap.mobile",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "OPEN-CAP Mobile",
         "width": 430,
         "height": 932,
@@ -22,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data: asset: https:; media-src 'self' blob: data: asset:; connect-src 'self' https://api.github.com https://fonts.googleapis.com"
     }
   },
   "bundle": {

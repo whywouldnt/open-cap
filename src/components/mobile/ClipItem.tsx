@@ -349,7 +349,7 @@ export const ClipItem: React.FC<ClipItemProps> = ({ clip, track, zoom }) => {
       {isSelected && (
         <div
           onPointerDown={handleTrimLeft}
-          className="absolute left-0 top-0 bottom-0 w-3.5 bg-cyan-400 rounded-l-md flex items-center justify-center cursor-ew-resize z-30 shadow"
+          className="absolute left-0 top-0 bottom-0 w-5 min-w-[44px] bg-cyan-400 rounded-l-md flex items-center justify-center cursor-ew-resize z-30 shadow"
         >
           <div className="w-0.5 h-3 bg-black rounded" />
         </div>
@@ -395,7 +395,7 @@ export const ClipItem: React.FC<ClipItemProps> = ({ clip, track, zoom }) => {
       {isSelected && (
         <div
           onPointerDown={handleTrimRight}
-          className={`absolute right-0 top-0 bottom-0 w-3.5 rounded-r-md flex items-center justify-center cursor-ew-resize z-30 shadow ${
+          className={`absolute right-0 top-0 bottom-0 w-5 min-w-[44px] rounded-r-md flex items-center justify-center cursor-ew-resize z-30 shadow ${
             editMode === 'ripple' ? 'bg-amber-400' : 'bg-cyan-400'
           }`}
           title={editMode === 'ripple' ? 'Dalgalı Kırp (Ripple Trim)' : 'Kırp'}

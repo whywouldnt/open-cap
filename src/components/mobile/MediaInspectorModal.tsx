@@ -34,7 +34,7 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 select-none">
+    <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 select-none">
       <div className="w-full sm:max-w-md bg-[#16161b] border border-white/10 rounded-t-2xl sm:rounded-2xl p-4 shadow-2xl flex flex-col gap-4 max-h-[85vh] overflow-y-auto no-scrollbar">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
@@ -44,7 +44,8 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-full text-zinc-400 hover:text-white"
+            aria-label="Kapat"
+            className="p-2.5 rounded-full text-zinc-400 hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>

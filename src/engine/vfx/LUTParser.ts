@@ -109,6 +109,72 @@ export class LUTParser {
   }
 
   /**
+   * Samples a 3D LUT Float32Array using true 3D Trilinear Interpolation
+   * @param lutData Float32Array containing RGBA 3D LUT points
+   * @param size Grid dimension (e.g. 32)
+   * @param r Normalized red [0.0 - 1.0]
+   * @param g Normalized green [0.0 - 1.0]
+   * @param b Normalized blue [0.0 - 1.0]
+   */
+  public static sample3DLUT(
+    lutData: Float32Array,
+    size: number,
+    r: number,
+    g: number,
+    b: number
+  ): [number, number, number] {
+    const maxIdx = size - 1;
+    const rx = Math.max(0, Math.min(maxIdx, r * maxIdx));
+    const gy = Math.max(0, Math.min(maxIdx, g * maxIdx));
+    const bz = Math.max(0, Math.min(maxIdx, b * maxIdx));
+
+    const r0 = Math.floor(rx);
+    const r1 = Math.min(maxIdx, r0 + 1);
+    const dr = rx - r0;
+
+    const g0 = Math.floor(gy);
+    const g1 = Math.min(maxIdx, g0 + 1);
+    const dg = gy - g0;
+
+    const b0 = Math.floor(bz);
+    const b1 = Math.min(maxIdx, b0 + 1);
+    const db = bz - b0;
+
+    const getPixel = (ri: number, gi: number, bi: number): [number, number, number] => {
+      // Standard .cube coordinate indexing: r changes fastest, then g, then b
+      const idx = (bi * size * size + gi * size + ri) * 4;
+      return [lutData[idx] || 0, lutData[idx + 1] || 0, lutData[idx + 2] || 0];
+    };
+
+    // 8 cube corners for trilinear interpolation
+    const c000 = getPixel(r0, g0, b0);
+    const c100 = getPixel(r1, g0, b0);
+    const c010 = getPixel(r0, g1, b0);
+    const c110 = getPixel(r1, g1, b0);
+    const c001 = getPixel(r0, g0, b1);
+    const c101 = getPixel(r1, g0, b1);
+    const c011 = getPixel(r0, g1, b1);
+    const c111 = getPixel(r1, g1, b1);
+
+    const lerp = (v0: number, v1: number, t: number) => v0 + t * (v1 - v0);
+
+    const out: [number, number, number] = [0, 0, 0];
+    for (let c = 0; c < 3; c++) {
+      const c00 = lerp(c000[c], c100[c], dr);
+      const c01 = lerp(c001[c], c101[c], dr);
+      const c10 = lerp(c010[c], c110[c], dr);
+      const c11 = lerp(c011[c], c111[c], dr);
+
+      const c0 = lerp(c00, c10, dg);
+      const c1 = lerp(c01, c11, dg);
+
+      out[c] = lerp(c0, c1, db);
+    }
+
+    return out;
+  }
+
+  /**
    * Applies simulated LUT color transformation on an RGBA pixel [r, g, b, a] in 0-255 range
    */
   public static applyPresetToRGB(

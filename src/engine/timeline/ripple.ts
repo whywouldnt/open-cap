@@ -3,12 +3,21 @@
  * Pure functional calculation engine for Ripple Delete, Ripple Trim, Roll, Slip, Slide, and Gap Closing
  */
 
-import { Track, Clip } from '@/types/project';
+import { Track, Clip, Project } from '@/types/project';
 
 export interface RippleResult {
   trackId: string;
   originalClips: Clip[];
   updatedClips: Clip[];
+  durationDelta: number;
+}
+
+export interface ProjectRippleResult {
+  tracks: Array<{
+    trackId: string;
+    originalClips: Clip[];
+    updatedClips: Clip[];
+  }>;
   durationDelta: number;
 }
 
@@ -36,7 +45,7 @@ export interface SlideResult {
 
 export class RippleEngine {
   /**
-   * 1. RIPPLE DELETE
+   * 1. RIPPLE DELETE (Single Track)
    * Deletes a clip and shifts all trailing clips to the left by deletedClip.duration
    */
   public static calculateRippleDelete(track: Track, clipId: string): RippleResult | null {
@@ -53,7 +62,7 @@ export class RippleEngine {
     for (let i = 0; i < originalClips.length; i++) {
       if (i === clipIndex) continue;
       const c = { ...originalClips[i] };
-      if (c.startTime > deletedClip.startTime) {
+      if (c.startTime >= deletedClip.startTime) {
         c.startTime = Math.max(0, c.startTime - shiftAmount);
       }
       updatedClips.push(c);
@@ -65,6 +74,64 @@ export class RippleEngine {
       trackId: track.id,
       originalClips,
       updatedClips,
+      durationDelta: -shiftAmount,
+    };
+  }
+
+  /**
+   * 1B. MULTI-TRACK PROJECT RIPPLE DELETE
+   * Deletes a clip and shifts trailing clips across all unlocked tracks to maintain multi-cam / audio sync
+   */
+  public static calculateProjectRippleDelete(
+    project: Project,
+    sourceTrackId: string,
+    clipId: string,
+    rippleAllTracks: boolean = true
+  ): ProjectRippleResult | null {
+    const sourceTrack = project.tracks.find((t) => t.id === sourceTrackId);
+    if (!sourceTrack) return null;
+
+    const targetClip = sourceTrack.clips.find((c) => c.id === clipId);
+    if (!targetClip) return null;
+
+    const shiftAmount = targetClip.duration;
+    const splitTime = targetClip.startTime;
+    const results: ProjectRippleResult['tracks'] = [];
+
+    for (const track of project.tracks) {
+      if (track.isLocked) {
+        continue;
+      }
+
+      const origClips = JSON.parse(JSON.stringify(track.clips)) as Clip[];
+      if (track.id === sourceTrackId) {
+        const singleResult = this.calculateRippleDelete(track, clipId);
+        if (singleResult) {
+          results.push({
+            trackId: track.id,
+            originalClips: singleResult.originalClips,
+            updatedClips: singleResult.updatedClips,
+          });
+        }
+      } else if (rippleAllTracks) {
+        const updatedClips: Clip[] = origClips.map((c) => {
+          const copy = { ...c };
+          if (copy.startTime >= splitTime) {
+            copy.startTime = Math.max(0, copy.startTime - shiftAmount);
+          }
+          return copy;
+        });
+        updatedClips.sort((a, b) => a.startTime - b.startTime);
+        results.push({
+          trackId: track.id,
+          originalClips: origClips,
+          updatedClips,
+        });
+      }
+    }
+
+    return {
+      tracks: results,
       durationDelta: -shiftAmount,
     };
   }

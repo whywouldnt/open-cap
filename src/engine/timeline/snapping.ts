@@ -31,7 +31,7 @@ export class SnappingEngine {
     targetTime: number,
     project: Project,
     currentTime: number,
-    thresholdSeconds: number = 0.15,
+    thresholdSeconds: number = 0.05,
     excludeClipId?: string
   ): SnapResult {
     let closestTarget: SnapTarget | null = null;

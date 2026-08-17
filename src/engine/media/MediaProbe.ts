@@ -20,6 +20,7 @@ export class MediaProbe {
       }
     } finally {
       // Don't revoke immediately if thumbnail needs it, but base64 thumbnails are generated
+      URL.revokeObjectURL(objectUrl);
     }
   }
 

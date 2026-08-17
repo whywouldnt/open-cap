@@ -90,4 +90,4 @@ export class HistoryManager {
 }
 
 // Global Singleton for the mobile application
-export const historyManager = new HistoryManager(50);
+export const historyManager = new HistoryManager(1000);

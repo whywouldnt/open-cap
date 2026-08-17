@@ -32,17 +32,42 @@ export class BeatDetectionEngine {
     const timePerSample = duration / n;
     const beatTimes: number[] = [];
 
-    // Calculate local energy threshold
-    const windowSize = Math.max(4, Math.floor(n / 30));
-    const meanEnergy = waveform.reduce((a, b) => a + b, 0) / n;
-    const threshold = meanEnergy * 1.3 * sensitivity;
+    // 1. Calculate RMS energy flux (spectral flux approximation across moving window)
+    const energyFlux: number[] = new Array(n).fill(0);
+    const windowSize = Math.max(3, Math.floor(0.08 / timePerSample)); // 80ms energy window
 
-    let lastBeatIndex = -10;
-    const minSpacingSamples = Math.max(2, Math.floor(0.25 / timePerSample)); // Max 240 BPM (min 0.25s apart)
+    for (let i = 0; i < n; i++) {
+      let sumSq = 0;
+      let count = 0;
+      for (let w = Math.max(0, i - windowSize); w <= Math.min(n - 1, i + windowSize); w++) {
+        sumSq += waveform[w] * waveform[w];
+        count++;
+      }
+      const rms = Math.sqrt(sumSq / Math.max(1, count));
+      // Energy flux is the positive difference in RMS energy
+      energyFlux[i] = i > 0 ? Math.max(0, rms - Math.sqrt((waveform[i - 1] * waveform[i - 1]))) : rms;
+    }
+
+    // 2. Compute dynamic moving average threshold
+    const contextRadius = Math.max(8, Math.floor(0.4 / timePerSample)); // 400ms context
+    const minSpacingSamples = Math.max(2, Math.floor(0.24 / timePerSample)); // Max 250 BPM (min 0.24s spacing)
+    let lastBeatIndex = -100;
 
     for (let i = 1; i < n - 1; i++) {
-      const isPeak = waveform[i] > waveform[i - 1] && waveform[i] > waveform[i + 1];
-      const isAboveThreshold = waveform[i] > threshold;
+      let localSum = 0;
+      let localCount = 0;
+      const start = Math.max(0, i - contextRadius);
+      const end = Math.min(n - 1, i + contextRadius);
+
+      for (let k = start; k <= end; k++) {
+        localSum += energyFlux[k];
+        localCount++;
+      }
+      const localMean = localSum / Math.max(1, localCount);
+      const adaptiveThreshold = localMean * (1.35 / Math.max(0.5, sensitivity));
+
+      const isPeak = energyFlux[i] > energyFlux[i - 1] && energyFlux[i] > energyFlux[i + 1];
+      const isAboveThreshold = energyFlux[i] > adaptiveThreshold && energyFlux[i] > 0.05;
 
       if (isPeak && isAboveThreshold && i - lastBeatIndex >= minSpacingSamples) {
         const beatTime = Math.round(i * timePerSample * 100) / 100;

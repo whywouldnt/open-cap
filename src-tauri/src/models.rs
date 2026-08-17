@@ -293,6 +293,14 @@ pub struct Clip {
     pub transition_out: Option<ClipTransition>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color_label: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speed_curve: Option<serde_json::Value>,
+    #[serde(default)]
+    pub is_reversed: bool,
+    #[serde(default)]
+    pub preserve_pitch: bool,
+    #[serde(default)]
+    pub smooth_slow_motion: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

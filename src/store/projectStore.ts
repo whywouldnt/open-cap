@@ -148,6 +148,8 @@ export const useProjectStore = create<ProjectState>()(
 
     reorderTracks: (startIndex: number, endIndex: number) =>
       set((state) => {
+        const len = state.project.tracks.length;
+        if (startIndex < 0 || startIndex >= len || endIndex < 0 || endIndex >= len) return;
         const [removed] = state.project.tracks.splice(startIndex, 1);
         state.project.tracks.splice(endIndex, 0, removed);
         state.isDirty = true;

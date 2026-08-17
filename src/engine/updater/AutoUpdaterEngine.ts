@@ -13,6 +13,7 @@ export interface UpdateInfo {
   apkDownloadUrl: string;
   publishedAt: string;
   fileSizeBytes?: number;
+  sha256?: string;
 }
 
 export class AutoUpdaterEngine {
@@ -84,9 +85,10 @@ export class AutoUpdaterEngine {
       const tagName = (releaseData.tag_name || releaseData.name || '').replace(/^v/, '');
       const hasNewVersion = this.isNewerVersion(tagName, this.CURRENT_VERSION);
 
-      // Find the APK file inside release assets
+      // Find the APK file and checksum inside release assets
       let apkUrl = '';
       let apkSize = 0;
+      let sha256 = '';
 
       if (Array.isArray(releaseData.assets)) {
         const apkAsset = releaseData.assets.find(
@@ -97,6 +99,13 @@ export class AutoUpdaterEngine {
         if (apkAsset) {
           apkUrl = apkAsset.browser_download_url;
           apkSize = apkAsset.size;
+        }
+
+        const shaAsset = releaseData.assets.find(
+          (a: any) => a.name && (a.name.endsWith('.sha256') || a.name.includes('checksum') || a.name.includes('SHA256'))
+        );
+        if (shaAsset) {
+          sha256 = shaAsset.browser_download_url;
         }
       }
 
@@ -113,6 +122,7 @@ export class AutoUpdaterEngine {
         apkDownloadUrl: apkUrl,
         publishedAt: releaseData.published_at || new Date().toISOString(),
         fileSizeBytes: apkSize,
+        sha256,
       };
     } catch (err) {
       console.warn('Could not check for updates from GitHub:', err);

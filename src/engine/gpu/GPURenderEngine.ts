@@ -255,6 +255,29 @@ export class GPURenderEngine {
     ctx.restore();
   }
 
+  /**
+   * Draws a media element with correct aspect ratio (object-fit: contain)
+   */
+  private drawMediaFit(
+    ctx: CanvasRenderingContext2D,
+    source: HTMLVideoElement | HTMLImageElement,
+    viewportW: number,
+    viewportH: number
+  ) {
+    const srcW = source instanceof HTMLVideoElement ? source.videoWidth : source.naturalWidth;
+    const srcH = source instanceof HTMLVideoElement ? source.videoHeight : source.naturalHeight;
+    if (!srcW || !srcH) {
+      ctx.drawImage(source, 0, 0, viewportW, viewportH);
+      return;
+    }
+    const scale = Math.min(viewportW / srcW, viewportH / srcH);
+    const drawW = srcW * scale;
+    const drawH = srcH * scale;
+    const offsetX = (viewportW - drawW) / 2;
+    const offsetY = (viewportH - drawH) / 2;
+    ctx.drawImage(source, offsetX, offsetY, drawW, drawH);
+  }
+
   private renderVideoLayer(
     ctx: CanvasRenderingContext2D,
     clip: Clip,
@@ -281,7 +304,7 @@ export class GPURenderEngine {
 
           if (videoEl && videoEl.readyState >= 2) {
             // Draw real decoded video frame
-            ctx.drawImage(videoEl, 0, 0, w, h);
+            this.drawMediaFit(ctx, videoEl, w, h);
             return;
           } else if (media.thumbnailUri) {
             // Fallback to thumbnail while video is loading
@@ -292,7 +315,7 @@ export class GPURenderEngine {
               this.imageElements.set(media.id, img);
             }
             if (img.complete) {
-              ctx.drawImage(img, 0, 0, w, h);
+              this.drawMediaFit(ctx, img, w, h);
               return;
             }
           }
@@ -307,7 +330,7 @@ export class GPURenderEngine {
             this.imageElements.set(media.id, img);
           }
           if (img.complete) {
-            ctx.drawImage(img, 0, 0, w, h);
+            this.drawMediaFit(ctx, img, w, h);
             return;
           }
         }
@@ -470,5 +493,19 @@ export class GPURenderEngine {
         ctx.fillRect(0, 0, w, h);
       }
     }
+  }
+
+  /**
+   * Releases all media elements and GPU resources to prevent memory leaks
+   */
+  public dispose() {
+    this.videoElements.forEach((video) => {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    });
+    this.videoElements.clear();
+    this.imageElements.clear();
+    this.ctx = null;
   }
 }

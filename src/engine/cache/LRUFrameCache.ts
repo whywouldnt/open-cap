@@ -100,6 +100,32 @@ export class LRUFrameCache {
     return this.cache.has(key);
   }
 
+  /**
+   * Evicts all cached frames and waveforms for a specific media ID
+   */
+  public evictMedia(mediaId: string): void {
+    const keysToDelete: string[] = [];
+    for (const [key, item] of this.cache.entries()) {
+      if (key.startsWith(`${mediaId}@`)) {
+        if (item.imageBitmap && typeof (item.imageBitmap as any).close === 'function') {
+          try {
+            (item.imageBitmap as ImageBitmap).close();
+          } catch {}
+        }
+        this.currentSizeBytes -= item.sizeBytes;
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach((k) => this.cache.delete(k));
+  }
+
+  /**
+   * Alias for evictMedia to clean up resources when media is removed
+   */
+  public delete(mediaId: string): void {
+    this.evictMedia(mediaId);
+  }
+
   public clear(): void {
     // Clean up any ImageBitmap memory
     for (const item of this.cache.values()) {

@@ -17,7 +17,7 @@ body {
   color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Rounded", "Inter Display", Inter, sans-serif;
   overflow: hidden;
-  touch-action: pan-y pinch-zoom;
+  touch-action: manipulation;
 }
 
 /* Custom resets for spatial mobile ergonomics */
@@ -119,3 +119,18 @@ input[type='range'] {
   opacity: 0.85;
   transition: transform 0.08s ease-out, opacity 0.08s ease-out;
 }
+
+/* Minimum 44x44px touch target for mobile accessibility */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal z-index hierarchy system */
+.modal-base { z-index: 50; }
+.modal-secondary { z-index: 55; }
+.modal-tertiary { z-index: 60; }
+.modal-alert { z-index: 70; }

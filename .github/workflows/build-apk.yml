@@ -72,7 +72,7 @@ jobs:
           export PATH="$BUILD_TOOLS_DIR:$PATH"
           
           # Generate standard release keystore
-          keytool -genkey -v -keystore release.keystore -alias opencap -keyalg RSA -keysize 2048 -validity 10000 -storepass opencap123 -keypass opencap123 -dname "CN=OPEN-CAP, OU=Mobile, O=OpenSource, L=Istanbul, C=TR"
+          keytool -genkey -v -keystore release.keystore -alias ${{ secrets.KEYSTORE_ALIAS || 'opencap' }} -keyalg RSA -keysize 2048 -validity 10000 -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEY_PASSWORD }} -dname "CN=OPEN-CAP, OU=Mobile, O=OpenSource, L=Istanbul, C=TR"
           
           # Find produced APK
           UNSIGNED_APK=$(find src-tauri/gen/android -type f -name "*.apk" | head -n 1)
@@ -82,7 +82,7 @@ jobs:
           ALIGN_APK="build_output/aligned.apk"
           zipalign -v -p 4 "$UNSIGNED_APK" "$ALIGN_APK" || cp "$UNSIGNED_APK" "$ALIGN_APK"
           
-          apksigner sign --ks release.keystore --ks-pass pass:opencap123 --key-pass pass:opencap123 --out build_output/OPEN-CAP-Mobile.apk "$ALIGN_APK"
+          apksigner sign --ks release.keystore --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} --key-pass pass:${{ secrets.KEY_PASSWORD }} --out build_output/OPEN-CAP-Mobile.apk "$ALIGN_APK"
           
           # Verify signature
           apksigner verify --verbose build_output/OPEN-CAP-Mobile.apk

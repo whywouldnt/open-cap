@@ -39,6 +39,10 @@ export const useMediaStore = create<MediaState>((set, get) => ({
   setSelectedMediaId: (selectedMediaId: string | null) => set({ selectedMediaId }),
 
   importFiles: async (files: FileList | File[]): Promise<ProjectMediaItem[]> => {
+    if (get().isImporting) {
+      console.warn('Import already in progress, queuing files...');
+    }
+
     const fileArray = Array.from(files);
     if (fileArray.length === 0) return [];
 
@@ -86,6 +90,7 @@ export const useMediaStore = create<MediaState>((set, get) => ({
 
   removeMedia: (id: string) => {
     useProjectStore.getState().removeMediaFromBin(id);
+    globalFrameCache.delete(id);
     set((state) => ({
       selectedMediaId: state.selectedMediaId === id ? null : state.selectedMediaId,
     }));

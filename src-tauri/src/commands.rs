@@ -71,8 +71,12 @@ pub fn save_project(path: Option<String>, mut project: Project) -> Result<SaveRe
 
     // Serialize to formatted JSON
     let json_content = serde_json::to_string_pretty(&project)?;
-    let mut file = File::create(&target_path)?;
+    let tmp_path = target_path.with_extension("opencap.tmp");
+    let mut file = File::create(&tmp_path)?;
     file.write_all(json_content.as_bytes())?;
+    file.sync_all()?;
+    drop(file);
+    fs::rename(&tmp_path, &target_path)?;
 
     let metadata = fs::metadata(&target_path)?;
 
